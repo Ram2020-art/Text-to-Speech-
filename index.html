@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech</title>
+    <style>
+        /* General Styles */
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 15px;
+        }
+
+        /* Theme Variables */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --highlight-color: #ffff99;
+            --button-radius: 5px;
+            --btn-size: 20px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --card-bg: #1e1e1e;
+            --border-color: #444;
+            --highlight-color: #ffeb3b;
+        }
+
+        /* Card Layout */
+        .card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            position: relative;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        /* Text Input */
+        .text-box {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            border-radius: 5px;
+            resize: none;
+            transition: 0.3s ease;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            padding: 5px;
+            border-radius: var(--button-radius);
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+        }
+
+        .btn svg {
+            width: var(--btn-size);
+            height: var(--btn-size);
+            fill: var(--text-color);
+        }
+
+        /* Word Count */
+        .word-count {
+            font-size: 14px;
+            margin-top: 15px;
+            color: var(--text-color);
+        }
+
+        /* Undo/Redo */
+        .undo-redo {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+
+        /* Speed Control Buttons */
+        .speed-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .speed-button {
+            font-size: 14px;
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--button-radius);
+            background: var(--text-color);
+            color: var(--bg-color);
+            cursor: pointer;
+        }
+
+        .speed-button:active {
+            transform: scale(0.95);
+        }
+
+        .bottom-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Text to Speech</h2>
+        
+        <textarea id="text-input" class="text-box" placeholder="Enter study text..." oninput="updateWordCount()"></textarea>
+        
+        <div class="controls">
+            <button class="btn" onclick="toggleSpeech()">
+                <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="pauseIcon" viewBox="0 0 24 24" style="display: none;"><path d="M6 6h12v12H6z"/></svg>
+            </button>
+            <button class="btn" onclick="undoText()">
+                <svg viewBox="0 0 24 24"><path d="M12 4l-4 4h3v6h2V8h3l-4-4z"/></svg>
+            </button>
+            <button class="btn" onclick="redoText()">
+                <svg viewBox="0 0 24 24"><path d="M12 20l4-4h-3v-6h-2v6h-3l4 4z"/></svg>
+            </button>
+            <button class="btn" onclick="toggleTheme()">
+                <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/></svg>
+            </button>
+        </div>
+
+        <div class="speed-buttons">
+            <button class="speed-button" onclick="changeSpeed(0.5)">0.5x</button>
+            <button class="speed-button" onclick="changeSpeed(1)">1x</button>
+            <button class="speed-button" onclick="changeSpeed(1.5)">1.5x</button>
+        </div>
+
+        <div class="bottom-controls">
+            <div class="word-count" id="word-count">Word Count: 0</div>
+            <div id="clear-text" class="btn" onclick="clearText()">Clear Text</div>
+        </div>
+    </div>
+
+    <script>
+        let utterance = new SpeechSynthesisUtterance();
+        let isPlaying = false;
+        let isPaused = false;
+        let speechSpeed = 1;
+        let history = [];
+        let historyIndex = -1;
+
+        // Check for Speech Synthesis support
+        if (!window.speechSynthesis) {
+            alert('Your browser does not support Speech Synthesis.');
+        }
+
+        // Toggle play/pause
+        function toggleSpeech() {
+            const text = document.getElementById('text-input').value;
+            if (!text.trim()) {
+                alert("Please enter some text.");
+                return;
+            }
+
+            if (isPaused) {
+                speechSynthesis.resume();
+                isPaused = false;
+                document.getElementById("pauseIcon").style.display = "none";
+                document.getElementById("playIcon").style.display = "block";
+                return;
+            }
+
+            if (isPlaying) {
+                speechSynthesis.pause();
+                isPaused = true;
+                document.getElementById("pauseIcon").style.display = "block";
+                document.getElementById("playIcon").style.display = "none";
+                return;
+            }
+
+            let index = 0;
+            utterance = new SpeechSynthesisUtterance();
+            utterance.rate = speechSpeed;
+
+            utterance.onboundary = () => {
+                document.getElementById('text-input').value = text.slice(0, index) + "%HIGHLIGHT%" + text[index] + "%HIGHLIGHT%" + text.slice(index + 1);
+                index++;
+            };
+
+            utterance.text = text;
+            speechSynthesis.speak(utterance);
+            isPlaying = true;
+            document.getElementById("pauseIcon").style.display = "block";
+            document.getElementById("playIcon").style.display = "none";
+
+            utterance.onend = () => {
+                isPlaying = false;
+                document.getElementById("pauseIcon").style.display = "none";
+                document.getElementById("playIcon").style.display = "block";
+            };
+        }
+
+        // Change speed in real-time
+        function changeSpeed(speed) {
+            speechSpeed = speed;
+            if (isPlaying) {
+                utterance.rate = speechSpeed;
+                speechSynthesis.cancel();
+                toggleSpeech(); // Restart with new speed
+            }
+        }
+
+        // Update word count
+        function updateWordCount() {
+            let text = document.getElementById('text-input').value.trim();
+            let wordCount = text.split(/\s+/).filter(Boolean).length;
+            document.getElementById('word-count').innerText = `Word Count: ${wordCount}`;
+        }
+
+        // Clear text input
+        function clearText() {
+            document.getElementById('text-input').value = "";
+            updateWordCount();
+        }
+
+        // Toggle dark/light theme
+        function toggleTheme() {
+            document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+        }
+
+        // Undo/Redo functionality
+        function undoText() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                document.getElementById('text-input').value = history[historyIndex];
+                updateWordCount();
+            }
+        }
+
+        function redoText() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                document.getElementById('text-input').value = history[historyIndex];
+                updateWordCount();
+            }
+        }
+
+        // Save text to history on input change
+        document.getElementById('text-input').addEventListener('input', (e) => {
+            if (historyIndex === history.length - 1) {
+                history.push(e.target.value);
+            } else {
+                history = history.slice(0, historyIndex + 1);
+                history.push(e.target.value);
+            }
+            historyIndex++;
+        });
+
+        window.onload = () => {
+            document.documentElement.setAttribute("data-theme", "light");
+            updateWordCount();
+        };
+    </script>
+
+</body>
+</html>
