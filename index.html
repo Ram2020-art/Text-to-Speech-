@@ -3,305 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text to Speech</title>
+    <title>TTS Ultimate Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* General Styles */
-        * {
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background: var(--bg-color);
-            color: var(--text-color);
-            transition: 0.3s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            padding: 15px;
-        }
-
-        /* Theme Variables */
         :root {
-            --bg-color: #f8f9fa;
-            --text-color: #333;
-            --card-bg: #ffffff;
-            --border-color: #ddd;
-            --highlight-color: #ffff99;
-            --button-radius: 5px;
-            --btn-size: 20px;
+            --bg-color: #f5f6fa;
+            --text-color: #2d3436;
+            --primary-color: #0984e3;
+            --secondary-color: #636e72;
+            --progress-color: #00b894;
+            --highlight-color: rgba(255, 234, 0, 0.25);
         }
 
         [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #ffffff;
-            --card-bg: #1e1e1e;
-            --border-color: #444;
-            --highlight-color: #ffeb3b;
+            --bg-color: #2d3436;
+            --text-color: #dfe6e9;
+            --primary-color: #00b894;
+            --secondary-color: #b2bec3;
+            --progress-color: #0984e3;
+            --highlight-color: rgba(255, 234, 0, 0.4);
         }
 
-        /* Card Layout */
-        .card {
-            width: 100%;
-            max-width: 400px;
-            background: var(--card-bg);
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            margin: 0;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .player-container {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .text-input {
+            width: 100%;
+            height: 200px;
+            padding: 18px;
+            margin: 15px 0;
+            border: 2px solid var(--primary-color);
+            border-radius: 12px;
+            resize: vertical;
+            background: transparent;
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--primary-color);
+            color: white;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        button:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .secondary-btn {
+            background: var(--secondary-color);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .current-word {
+            margin: 15px 0;
+            font-style: italic;
+            color: var(--primary-color);
+            min-height: 1.2em;
+            font-weight: 500;
             text-align: center;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
             position: relative;
         }
 
-        h2 {
-            margin-bottom: 15px;
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: var(--progress-color);
+            transition: width 0.2s ease;
         }
 
-        /* Text Input */
-        .text-box {
-            width: 100%;
-            height: 150px;
-            padding: 12px;
-            font-size: 14px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-color);
-            color: var(--text-color);
-            border-radius: 5px;
-            resize: none;
-            transition: 0.3s ease;
-        }
-
-        /* Controls */
-        .controls {
+        .speed-indicator {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 0.95em;
+            color: var(--secondary-color);
             display: flex;
-            justify-content: space-around;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn {
-            border: none;
-            cursor: pointer;
-            background: transparent;
-            padding: 5px;
-            border-radius: var(--button-radius);
-            transition: transform 0.2s ease;
-        }
-
-        .btn:hover {
-            transform: scale(1.1);
-        }
-
-        .btn svg {
-            width: var(--btn-size);
-            height: var(--btn-size);
-            fill: var(--text-color);
-        }
-
-        /* Word Count */
-        .word-count {
-            font-size: 14px;
-            margin-top: 15px;
-            color: var(--text-color);
-        }
-
-        /* Undo/Redo */
-        .undo-redo {
-            display: flex;
-            gap: 10px;
-            position: absolute;
-            top: 15px;
-            right: 15px;
-        }
-
-        /* Speed Control Buttons */
-        .speed-buttons {
-            display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 15px;
-            margin-top: 15px;
+            gap: 8px;
         }
 
-        .speed-button {
-            font-size: 14px;
-            padding: 5px 10px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--button-radius);
-            background: var(--text-color);
-            color: var(--bg-color);
-            cursor: pointer;
+        .highlight {
+            background: var(--highlight-color);
+            border-radius: 3px;
+            transition: background 0.2s;
         }
 
-        .speed-button:active {
-            transform: scale(0.95);
-        }
+        @media (max-width: 768px) {
+            .controls {
+                flex-wrap: wrap;
+            }
 
-        .bottom-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
+            .text-input {
+                height: 150px;
+            }
         }
-
     </style>
 </head>
 <body>
-
-    <div class="card">
-        <h2>Text to Speech</h2>
-        
-        <textarea id="text-input" class="text-box" placeholder="Enter study text..." oninput="updateWordCount()"></textarea>
-        
-        <div class="controls">
-            <button class="btn" onclick="toggleSpeech()">
-                <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                <svg id="pauseIcon" viewBox="0 0 24 24" style="display: none;"><path d="M6 6h12v12H6z"/></svg>
-            </button>
-            <button class="btn" onclick="undoText()">
-                <svg viewBox="0 0 24 24"><path d="M12 4l-4 4h3v6h2V8h3l-4-4z"/></svg>
-            </button>
-            <button class="btn" onclick="redoText()">
-                <svg viewBox="0 0 24 24"><path d="M12 20l4-4h-3v-6h-2v6h-3l4 4z"/></svg>
-            </button>
-            <button class="btn" onclick="toggleTheme()">
-                <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16z"/></svg>
-            </button>
+    <div class="container">
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <i class="fas fa-moon"></i>
         </div>
 
-        <div class="speed-buttons">
-            <button class="speed-button" onclick="changeSpeed(0.5)">0.5x</button>
-            <button class="speed-button" onclick="changeSpeed(1)">1x</button>
-            <button class="speed-button" onclick="changeSpeed(1.5)">1.5x</button>
+        <h1 style="text-align: center; margin-bottom: 25px; color: var(--primary-color);">
+            <i class="fas fa-volume-up"></i> TTS Ultimate
+        </h1>
+
+        <textarea class="text-input" placeholder="Enter or paste your text here..." 
+                  maxlength="10000" spellcheck="true"></textarea>
+
+        <div class="player-container">
+            <div class="current-word" id="currentWord"></div>
+            
+            <div class="controls">
+                <button onclick="togglePlayback()" id="playBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button onclick="adjustSpeed(-0.1)">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button onclick="adjustSpeed(0.1)">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button onclick="clearText()" class="secondary-btn">
+                    <i class="fas fa-eraser"></i>
+                </button>
+                <button onclick="copyToClipboard()" class="secondary-btn">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+
+            <div class="speed-indicator">
+                <i class="fas fa-tachometer-alt"></i>
+                Speed: <span id="speedIndex">1.0</span>x
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="status-bar">
+                <span class="word-counter">
+                    <i class="fas fa-file-word"></i>
+                    <span id="wordCount">0</span> words
+                </span>
+                <span>
+                    <button onclick="downloadText()" class="secondary-btn">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </span>
+            </div>
         </div>
 
-        <div class="bottom-controls">
-            <div class="word-count" id="word-count">Word Count: 0</div>
-            <div id="clear-text" class="btn" onclick="clearText()">Clear Text</div>
+        <div class="copyright">
+            © 2023 RAM MIJAR | Made with <i class="fas fa-heart" style="color: #ff4757;"></i>
         </div>
     </div>
 
     <script>
-        let utterance = new SpeechSynthesisUtterance();
+        // Enhanced Configuration
         let isPlaying = false;
-        let isPaused = false;
-        let speechSpeed = 1;
-        let history = [];
-        let historyIndex = -1;
+        let currentUtterance = null;
+        let currentWordIndex = 0;
+        let words = [];
 
-        // Check for Speech Synthesis support
-        if (!window.speechSynthesis) {
-            alert('Your browser does not support Speech Synthesis.');
+        // DOM Elements
+        const textInput = document.querySelector('.text-input');
+        const playBtn = document.getElementById('playBtn');
+        const wordCountSpan = document.getElementById('wordCount');
+        const currentWordSpan = document.getElementById('currentWord');
+        const speedIndexSpan = document.getElementById('speedIndex');
+        const progressBar = document.getElementById('progressBar');
+
+        // Initialize
+        initializeApp();
+
+        function initializeApp() {
+            checkTTSSupport();
+            setupEventListeners();
+            loadSavedState();
         }
 
-        // Toggle play/pause
-        function toggleSpeech() {
-            const text = document.getElementById('text-input').value;
-            if (!text.trim()) {
-                alert("Please enter some text.");
-                return;
-            }
-
-            if (isPaused) {
-                speechSynthesis.resume();
-                isPaused = false;
-                document.getElementById("pauseIcon").style.display = "none";
-                document.getElementById("playIcon").style.display = "block";
-                return;
-            }
-
-            if (isPlaying) {
-                speechSynthesis.pause();
-                isPaused = true;
-                document.getElementById("pauseIcon").style.display = "block";
-                document.getElementById("playIcon").style.display = "none";
-                return;
-            }
-
-            let index = 0;
-            utterance = new SpeechSynthesisUtterance();
-            utterance.rate = speechSpeed;
-
-            utterance.onboundary = () => {
-                document.getElementById('text-input').value = text.slice(0, index) + "%HIGHLIGHT%" + text[index] + "%HIGHLIGHT%" + text.slice(index + 1);
-                index++;
-            };
-
-            utterance.text = text;
-            speechSynthesis.speak(utterance);
-            isPlaying = true;
-            document.getElementById("pauseIcon").style.display = "block";
-            document.getElementById("playIcon").style.display = "none";
-
-            utterance.onend = () => {
-                isPlaying = false;
-                document.getElementById("pauseIcon").style.display = "none";
-                document.getElementById("playIcon").style.display = "block";
-            };
-        }
-
-        // Change speed in real-time
-        function changeSpeed(speed) {
-            speechSpeed = speed;
-            if (isPlaying) {
-                utterance.rate = speechSpeed;
-                speechSynthesis.cancel();
-                toggleSpeech(); // Restart with new speed
+        function checkTTSSupport() {
+            if (!('speechSynthesis' in window)) {
+                showError('Text-to-Speech is not supported in this browser. Please use Chrome or Edge.');
             }
         }
 
-        // Update word count
-        function updateWordCount() {
-            let text = document.getElementById('text-input').value.trim();
-            let wordCount = text.split(/\s+/).filter(Boolean).length;
-            document.getElementById('word-count').innerText = `Word Count: ${wordCount}`;
+        function setupEventListeners() {
+            textInput.addEventListener('input', handleTextInput);
         }
 
-        // Clear text input
-        function clearText() {
-            document.getElementById('text-input').value = "";
+        function handleTextInput() {
             updateWordCount();
+            saveAppState();
         }
 
-        // Toggle dark/light theme
-        function toggleTheme() {
-            document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
-        }
-
-        // Undo/Redo functionality
-        function undoText() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                document.getElementById('text-input').value = history[historyIndex];
-                updateWordCount();
-            }
-        }
-
-        function redoText() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                document.getElementById('text-input').value = history[historyIndex];
-                updateWordCount();
-            }
-        }
-
-        // Save text to history on input change
-        document.getElementById('text-input').addEventListener('input', (e) => {
-            if (historyIndex === history.length - 1) {
-                history.push(e.target.value);
+        function togglePlayback() {
+            if (isPlaying) {
+                pauseSpeech();
             } else {
-                history = history.slice(0, historyIndex + 1);
-                history.push(e.target.value);
+                startSpeech();
             }
-            historyIndex++;
-        });
+        }
 
-        window.onload = () => {
-            document.documentElement.setAttribute("data-theme", "light");
+        function startSpeech() {
+            if (!textInput.value.trim()) {
+                showError('Please enter some text to speak.');
+                return;
+            }
+
+            prepareSpeech();
+            setupSpeechCallbacks();
+            window.speechSynthesis.speak(currentUtterance);
+            isPlaying = true;
+            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+
+        function prepareSpeech() {
+            words = textInput.value.split(/\s+/).filter(w => w !== '');
+            currentUtterance = new SpeechSynthesisUtterance(textInput.value);
+            currentUtterance.rate = parseFloat(localStorage.getItem('ttsRate')) || 1;
+        }
+
+        function setupSpeechCallbacks() {
+            currentUtterance.onstart = () => {
+                currentWordIndex = 0;
+                highlightCurrentWord();
+                updateSpeechProgress();
+            };
+
+            currentUtterance.onend = () => {
+                resetPlaybackState();
+            };
+        }
+
+        function pauseSpeech() {
+            window.speechSynthesis.pause();
+            isPlaying = false;
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }
+
+        function highlightCurrentWord() {
+            if (currentWordIndex < words.length) {
+                currentWordSpan.textContent = words[currentWordIndex];
+                highlightTextInArea(words[currentWordIndex]);
+                currentWordIndex++;
+                setTimeout(highlightCurrentWord, calculateWordDuration());
+            }
+        }
+
+        function calculateWordDuration() {
+            return words[currentWordIndex - 1].length * (currentUtterance.rate * 50);
+        }
+
+        function updateSpeechProgress() {
+            const progress = (currentWordIndex / words.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            if (isPlaying) requestAnimationFrame(updateSpeechProgress);
+        }
+
+        function resetPlaybackState() {
+            isPlaying = false;
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            currentWordSpan.textContent = '';
+            progressBar.style.width = '0%';
+        }
+
+        function adjustSpeed(change) {
+            const newRate = Math.min(Math.max((parseFloat(localStorage.getItem('ttsRate')) || 1) + change, 0.5), 2);
+            localStorage.setItem('ttsRate', newRate);
+            speedIndexSpan.textContent = newRate.toFixed(1);
+            if (currentUtterance) currentUtterance.rate = newRate;
+        }
+
+        function updateWordCount() {
+            const count = textInput.value.trim() ? textInput.value.split(/\s+/).length : 0;
+            wordCountSpan.textContent = count;
+        }
+
+        function clearText() {
+            textInput.value = '';
             updateWordCount();
-        };
-    </script>
+        }
 
+        function copyToClipboard() {
+            textInput.select();
+            document.execCommand('copy');
+            showError('Text copied to clipboard!');
+        }
+
+        function downloadText() {
+            const text = textInput.value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'text.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function toggleTheme() {
+            const theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            document.body.dataset.theme = theme;
+            localStorage.setItem('theme', theme);
+            document.querySelector('.theme-toggle i').className = 
+                theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function loadSavedState() {
+            document.body.dataset.theme = localStorage.getItem('theme') || 'light';
+            textInput.value = localStorage.getItem('ttsText') || '';
+            speedIndexSpan.textContent = (localStorage.getItem('ttsRate') || 1).toFixed(1);
+            updateWordCount();
+            document.querySelector('.theme-toggle i').className = 
+                document.body.dataset.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function saveAppState() {
+            localStorage.setItem('ttsText', textInput.value);
+        }
+
+        function showError(message) {
+            currentWordSpan.textContent = message;
+            currentWordSpan.style.color = '#ff7675';
+            setTimeout(() => currentWordSpan.style.color = '', 2000);
+        }
+    </script>
 </body>
 </html>
